@@ -1,49 +1,75 @@
 class BooksController < ApplicationController
+before_action :ensure_user, only: [:edit, :update, :destroy]
 
-  def show
-    @book = Book.find(params[:id])
-  end
+  def new
+   @book = Book.new
 
-  def index
-    @books = Book.all
   end
 
   def create
     @book = Book.new(book_params)
     @book.user_id = current_user.id
     if @book.save
-      redirect_to book_path(@book), notice: "You have created book successfully."
+      flash[:notice] = "You have created book successfully."
+      redirect_to book_path(@book.id)
+      
     else
+      flash.now[:alert] = 'You have created book error.'
       @books = Book.all
-      render 'index'
+      render :index
+
     end
+  end
+
+  def index
+    @books = Book.all
+    @users = User.all
+    @book = Book.new
+    
+  end
+
+  def show
+    @book = Book.find(params[:id])
+    @book_new = Book.new
+    @books = Book.all
   end
 
   def edit
     @book = Book.find(params[:id])
+    @book_new = Book.new
   end
-
-
 
   def update
     @book = Book.find(params[:id])
     if @book.update(book_params)
-      redirect_to book_path(@book), notice: "You have updated book successfully."
+      flash[:notice] = "You have updated book successfully."
+      redirect_to book_path(@book.id)
     else
-      render "edit"
+      flash.now[:alert] = 'You have updated book error.'
+      render :edit
     end
   end
 
-  def delete
+  def destroy
     @book = Book.find(params[:id])
-    @book.destoy
+    @book.destroy
     redirect_to books_path
   end
 
   private
 
+  def ensure_user
+    @books = current_user.books
+    @book = @books.find_by(id: params[:id])
+    redirect_to books_path unless @book
+  end
+
+
   def book_params
-    params.require(:book).permit(:title)
+    params.require(:book).permit(:title, :body)
+  end
+  def user_params
+    params.require(:user).permit(:name, :profile_image)
   end
 
 end
